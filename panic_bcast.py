@@ -43,19 +43,15 @@ def httpd():
 	s = HTTPServer(('', 8080), panicHandler)
 	s.serve_forever()
 
+# TODO: Extend with a C lib that iterates through used physmem addresses and
+#       overwrites values in a prio order before triggering poweroff.
+# TODO: Use mountedDrives() to iterate and eject (crypto) mounts
 def treatPanic():
 	os.popen("killall truecrypt")
-	# TODO: Improve by overwriting memory locations directly.
-	#       This method crashes the kernel by overwriting sensitive
-	#       addressestoo fast. C is needed to do this efficiently.
-	#os.popen("dd if=/dev/zero of=/dev/mem bs=" + memtotal())
-
-def memtotal():
-	# Linux:
-	memtotal = int(os.popen("grep \"MemTotal\" /proc/meminfo | grep -o \"[0-9]*\"").read()) / 1024
-
-	# TODO FreeBSD (bytes): sysctl hw.physmem
-	return memtotal
+	# Linux, possibly more
+	os.popen("shutdown -P now")
+	# FreeBSD, possibly more
+	os.popen("shutdown -p now")
 
 def sigListener():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
