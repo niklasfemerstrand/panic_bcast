@@ -1,0 +1,10 @@
+panic-bcast is a network protocol panic button operating decentralized through UDP broadcasts and HTTP. It's intended to act a panic button in a sensitive network. A serious freedom fighter will run something like this on all nodes in the computerized network.
+
+Here's how it works:
+
+1. An opsec activist has uninvited guests at the door
+2. The activist sends the panic signal, a UDP broadcast, with panic-bcast
+3. Other machines in the network pick up the panic signal and repeat it
+4. Once panic-bcast has picked up and repeated the panic signal it ejects critical drives to secure any encrypted containers. It then overwrites the memory to make cold boot attacks harder.
+
+Remember kids: there's no home for swap in opsec.
