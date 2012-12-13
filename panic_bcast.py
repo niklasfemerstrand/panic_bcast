@@ -71,16 +71,16 @@ def sigListener():
 		except:
 			pass
 
-# Extracts device paths from any system that uses fstab
-# TODO Add ZFS support
-def fstabDrives():
+# Extracts mounted device names and mount points. Intended to work on
+# everything UNIX. Tested on Linux and FreeBSD (UFS2 and ZFS).
+def mountedDrives():
 	drives = []
-	# Verified to work on Linux
-	for line in open("/etc/fstab", 'r'):
-		# The comments, Jim. Don't let 'em parse.
-		if line is not "" and re.match("^[ \t]*#", line) is None:
-			for drive in re.findall("^[ \t]*(\/\w*\/\w*)", line):
-				drives.append(drive)
+	mount = os.popen("mount | grep -o \".* on .* (\"").read()
+	for m in mount.split("\n"):
+		matches = re.match("(.*) on (.*) \(", m)
+		if matches:
+			drives.append({ matches.group(1) : matches.group(2) })
+
 	return drives
 
 def bcast():
