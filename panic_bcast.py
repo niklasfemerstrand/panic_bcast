@@ -26,7 +26,6 @@
 import re
 import os
 import socket
-import netinfo
 import threading
 import BaseHTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -49,7 +48,7 @@ def treatPanic():
 	# TODO: Improve by overwriting memory locations directly.
 	#       This method crashes the kernel by overwriting sensitive
 	#       addressestoo fast. C is needed to do this efficiently.
-	os.popen("dd if=/dev/zero of=/dev/mem bs=" + memtotal())
+	#os.popen("dd if=/dev/zero of=/dev/mem bs=" + memtotal())
 
 def memtotal():
 	# Linux:
@@ -84,19 +83,10 @@ def fstabDrives():
 				drives.append(drive)
 	return drives
 
-def myIP():
-	for route in netinfo.get_routes():
-		if route["gateway"] != "0.0.0.0":
-			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			s.connect((route["gateway"], 1337))
-	
-			ip = s.getsockname()[0]
-			s.close()
-
-			return ip
-
 def bcast():
-	bcast = re.sub("\.[0-9]+$", ".255", myIP())
+	bcast = os.popen("ifconfig | grep -o \"broadcast [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\"").read()
+	bcast = bcast.replace("broadcast ", "")
+
 	return bcast
 	
 def sendSignal():
