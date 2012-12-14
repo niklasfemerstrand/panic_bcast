@@ -25,18 +25,39 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import re
 import os
+import md5
 import socket
 import threading
 import BaseHTTPServer
+from optparse import OptionParser
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+argparse = OptionParser()
+argparse.add_option("-k", "--key", dest="key",
+					help = "Optional, when set it adds a key to the panic signal.",
+					metavar="<your key>")
+
+args = argparse.parse_args()
+
+global key
+if args[0].key:
+	key = args[0].key
+else:
+	key = ""
+
+global signal
+signal = "/\\x"
+signal = signal + "\\x".join(x.encode("hex") for x in md5.new("panic" + key).digest())
 
 # Basic HTTP server that listens to GET /panic and triggers panic.
 # Written to provide a standardized interface for panic triggering.
 # To trigger panic through HTTP simply request http://localhost:8080/panic
 class panicHandler(BaseHTTPRequestHandler):
 	def do_GET(self):
-		if self.path == "/\x70\x61\x6e\x69\x63":
+		req = "/\\x" + "\\x".join(x.encode("hex") for x in md5.new(re.sub("^\/", "", self.path)).digest())
+
+		if req == signal:
 			sendSignal()
 
 def httpd():
@@ -61,23 +82,11 @@ def sigListener():
 
 	while 1:
 		try:
-			message, address = s.recvfrom(5)
-			if message == "\x70\x61\x6e\x69\x63":
+			message, address = s.recvfrom(65)
+			if message == signal:
 				treatPanic()
 		except:
 			pass
-
-# Extracts mounted device names and mount points. Intended to work on
-# everything UNIX. Tested on Linux and FreeBSD (UFS2 and ZFS).
-def mountedDrives():
-	drives = []
-	mount = os.popen("mount | grep -o \".* on .* (\"").read()
-	for m in mount.split("\n"):
-		matches = re.match("(.*) on (.*) \(", m)
-		if matches:
-			drives.append({ matches.group(1) : matches.group(2) })
-
-	return drives
 
 def bcast():
 	bcast = os.popen("ifconfig | grep -o \"broadcast [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\"").read()
@@ -89,7 +98,7 @@ def sendSignal():
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	s.sendto("\x70\x61\x6e\x69\x63", (bcast(), 1337))
+	s.sendto(signal, (bcast(), 1337))
 	s.close()
 
 	return 0
