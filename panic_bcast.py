@@ -37,6 +37,9 @@ argparse = OptionParser()
 argparse.add_option("-k", "--key", dest="key",
 					help = "Optional, when set it adds a key to the panic signal.",
 					metavar="<your key>")
+argparse.add_option("-p", "--port", dest="port",
+					help = "HTTP port to use",
+					metavar="<your key>")
 
 args = argparse.parse_args()
 
@@ -46,13 +49,19 @@ if args[0].key:
 else:
 	key = ""
 
+global port
+if args[0].port:
+	port = int(args[0].port)
+else:
+	port = 8080
+
 global signal
 signal = "/\\x"
 signal = signal + "\\x".join(x.encode("hex") for x in md5.new("panic" + key).digest())
 
 # Basic HTTP server that listens to GET /panic and triggers panic.
 # Written to provide a standardized interface for panic triggering.
-# To trigger panic through HTTP simply request http://localhost:8080/panic
+# To trigger panic through HTTP simply request http://localhost:port/panic
 class panicHandler(BaseHTTPRequestHandler):
 	def do_GET(self):
 		req = "/\\x" + "\\x".join(x.encode("hex") for x in md5.new(re.sub("^\/", "", self.path)).digest())
@@ -61,7 +70,7 @@ class panicHandler(BaseHTTPRequestHandler):
 			sendSignal()
 
 def httpd():
-	s = HTTPServer(('', 8080), panicHandler)
+	s = HTTPServer(('', port), panicHandler)
 	s.serve_forever()
 
 # TODO: Extend with a C lib that iterates through used physmem addresses and

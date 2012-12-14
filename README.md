@@ -15,7 +15,7 @@ To trigger the panic signal over HTTP simply request http://...:8080/panic from 
 
 ## Authentication ##
 
-If you want you can append the panic signal with a required key. Just execute the script with the -k option. When using the key it is appended to the string "panic"; if your key happens to be "_banana" then the panic signal will respectively be "panic_banana". The panic signal is then sent over the network as a HEX converted MD5 checksum. Consequently you have to start the script with the same key value on all instances in the network.
+If you want you can append the panic signal with a required key. Just execute the script with the -k option. When using the key it is appended to the string "panic"; if your key happens to be "_banana" then the panic signal will respectively be "panic_banana". The panic signal is then sent over the network as a MD5 checksum. Consequently you have to start the script with the same key value on all instances in the network.
 
 For script help execute with the --help parameter.
 
