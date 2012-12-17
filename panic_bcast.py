@@ -77,7 +77,7 @@ def httpd():
 #       overwrites values in a prio order before triggering poweroff.
 # TODO: Use mountedDrives() to iterate and eject (crypto) mounts
 def treatPanic():
-	os.popen("killall truecrypt")
+	os.popen("truecrypt -d")
 	# Linux, possibly more
 	os.popen("shutdown -P now")
 	# FreeBSD, possibly more
