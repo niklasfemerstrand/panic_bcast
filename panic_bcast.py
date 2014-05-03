@@ -35,82 +35,74 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 argparse = OptionParser()
 argparse.add_option("-k", "--key", dest="key",
-					help = "Optional, when set it adds a key to the panic signal.",
-					metavar="<your key>")
+                                        help = "Optional, when set it adds a key to the panic signal.",
+                                        metavar="<your key>")
 argparse.add_option("-p", "--port", dest="port",
-					help = "HTTP port to use",
-					metavar="<your key>")
+                                        help = "HTTP port to use",
+                                        metavar="<your key>")
 
 args = argparse.parse_args()
 
 global key
-if args[0].key:
-	key = args[0].key
-else:
-	key = ""
+key = args[0].key or ""
 
 global port
-if args[0].port:
-	port = int(args[0].port)
-else:
-	port = 8080
+port = int(args[0].port or 8080)
 
 global signal
 signal = "/\\x"
-signal = signal + "\\x".join(x.encode("hex") for x in md5.new("panic" + key).digest())
+signal += "\\x".join(x.encode("hex") for x in md5.new("panic" + key).digest())
 
 # Basic HTTP server that listens to GET /panic and triggers panic.
 # Written to provide a standardized interface for panic triggering.
 # To trigger panic through HTTP simply request http://localhost:port/panic
 class panicHandler(BaseHTTPRequestHandler):
-	def do_GET(self):
-		req = "/\\x" + "\\x".join(x.encode("hex") for x in md5.new(re.sub("^\/", "", self.path)).digest())
-
-		if req == signal:
-			sendSignal()
+    def do_GET(self):
+        req = "/\\x" + "\\x".join(x.encode("hex") for x in md5.new(re.sub("^\/", "", self.path)).digest())
+        if req == signal:
+            sendSignal()
 
 def httpd():
-	s = HTTPServer(('', port), panicHandler)
-	s.serve_forever()
+    s = HTTPServer(('', port), panicHandler)
+    s.serve_forever()
 
 # TODO: Extend with a C lib that iterates through used physmem addresses and
 #       overwrites values in a prio order before triggering poweroff.
 # TODO: Use mountedDrives() to iterate and eject (crypto) mounts
 def treatPanic():
-	os.popen("truecrypt -d")
-	# Linux, possibly more
-	os.popen("shutdown -P now")
-	# FreeBSD, possibly more
-	os.popen("shutdown -p now")
+    os.popen("truecrypt -d")
+    # Linux, possibly more
+    os.popen("shutdown -P now")
+    # FreeBSD, possibly more
+    os.popen("shutdown -p now")
 
 def sigListener():
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	s.bind(("", 1337)) # Listen on all devices
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    s.bind(("", 1337)) # Listen on all devices
 
-	while 1:
-		try:
-			message, address = s.recvfrom(65)
-			if message == signal:
-				treatPanic()
-		except:
-			pass
+    while True:
+        try:
+            message, address = s.recvfrom(65)
+            if message == signal:
+                treatPanic()
+        except:
+            pass
 
 def bcast():
-	bcast = os.popen("ifconfig | grep -o \"broadcast [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\"").read()
-	bcast = bcast.replace("broadcast ", "")
+    bcast = os.popen("ifconfig | grep -o \"broadcast [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\"").read()
+    bcast = bcast.replace("broadcast ", "")
+    return bcast
 
-	return bcast
-	
 def sendSignal():
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	s.sendto(signal, (bcast(), 1337))
-	s.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    s.sendto(signal, (bcast(), 1337))
+    s.close()
+    return 0
 
-	return 0
 
 httpd = threading.Thread(name="httpd", target=httpd)
 httpd.start()
