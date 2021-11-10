@@ -23,3 +23,4 @@ For script help execute with the --help parameter.
 Please note that panic_bcast is a beta and more sophisticated ways to prevent cold boot attacks are planned. You can view these plans by searching for the word "TODO" in the source code.
 
 Remember kids: there's no home for swap in opsec.
+THAT CAN BE ALL
